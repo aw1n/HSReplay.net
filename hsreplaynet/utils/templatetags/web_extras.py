@@ -2,6 +2,7 @@ from django import template
 from django.conf import settings
 from humanize import naturaldelta, naturaltime
 from datetime import datetime
+from urllib.parse import unquote, urlparse, parse_qs
 from hearthstone.enums import CardType
 from hsreplaynet.cards.models import Card, Deck
 from hsreplaynet.cards.archetypes import guess_class
@@ -67,6 +68,18 @@ def static_absolute(context, value):
 def render_deck_list_meta_for_digest_param(context):
 	request = context.request
 	deck_digest = request.GET.get("deck_digest", "")
+
+	# Check if deck_digest is nested within the next param
+	if not deck_digest:
+		next_url_encoded = request.GET.get("next", "")
+		if next_url_encoded:
+			query_str = urlparse(unquote(next_url_encoded)).query
+			query_params = parse_qs(query_str)
+			if "deck_digest" in query_params:
+				deck_digest_values = query_params["deck_digest"]
+				if deck_digest_values:
+					deck_digest = deck_digest_values[0]
+
 	result = {
 		"render_meta_tag": False
 	}
