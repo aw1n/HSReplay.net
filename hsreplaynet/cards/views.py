@@ -8,8 +8,9 @@ from hearthstone.enums import CardClass
 from hsreplaynet.cards.stats.winrates import get_head_to_head_winrates
 from hsreplaynet.cards.models import Archetype
 from hsreplaynet.features.decorators import view_requires_feature_access
-from .models import Card
+from .models import Card, Deck
 from .queries import CardCountersQueryBuilder
+from hsreplaynet.cards.archetypes import guess_class
 
 
 def archetypes(request):
@@ -18,6 +19,19 @@ def archetypes(request):
 
 def popular_cards(request):
 	return render(request, "cards/popular_cards.html", {})
+
+
+def deckdetail(request, deck_id):
+	try:
+		deck = Deck.objects.get(id=deck_id)
+	except Deck.DoesNotExist:
+		raise Http404("Deck not found")
+	cards = deck.card_id_list()
+	if (len(cards)) != 30:
+		raise Http404("Deck not found")
+	decklist = ",".join(cards)
+	deck_class = guess_class(deck)
+	return render(request, "cards/deck_detail.html", {"deck": deck, "cards": decklist, "deck_class": deck_class.name})
 
 
 def carddetail(request, card_id):

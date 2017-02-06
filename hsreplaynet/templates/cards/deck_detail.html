@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}Details for {{deck.name}}{% endblock %}
+
+{% block fullcontent %}
+<div id="deck-info"
+	deck-id="{{ deck.id }}"
+	deck-cards="{{ cards }}"
+	deck-class="{{ deck_class }}">
+</div>
+<div id="deck-container" style="display: flex;justify-content: center;">
+</div>
+	{% render_bundle "deck_detail" %}
+{% endblock %}

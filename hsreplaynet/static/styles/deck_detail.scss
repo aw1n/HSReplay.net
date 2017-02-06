@@ -1,0 +1,39 @@
+.deck-detail-container {
+	width: 100%;
+}
+@media (min-width: 1400px) {
+	.deck-detail-container {
+		width: 80%;
+	}
+}
+
+.card-table-row {
+	> td {
+		line-height: 19px;
+		font-weight: bold;
+
+		&.winrate-cell {
+			white-space: pre;
+		}
+
+		.card-wrapper {
+			min-width: 150px;
+			max-width: 217px;
+			margin-top: -9px;
+			margin-bottom: -9px;
+		}
+	}
+}
+
+.chart-column {
+	padding-left: 0;
+	padding-right: 0;
+
+	.chart-wrapper {
+		max-width: 250px;
+		margin: 0 auto;
+		&.wide {
+			max-width: 500px;
+		}
+	}
+}

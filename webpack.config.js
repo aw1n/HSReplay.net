@@ -53,6 +53,7 @@ module.exports = {
 		victory_widgets: path.resolve(__dirname, "./hsreplaynet/static/scripts/src/entries/victory_widgets"),
 		card_detail: path.resolve(__dirname, "./hsreplaynet/static/scripts/src/entries/card_detail"),
 		popular_cards: path.resolve(__dirname, "./hsreplaynet/static/scripts/src/entries/popular_cards"),
+		deck_detail: path.resolve(__dirname, "./hsreplaynet/static/scripts/src/entries/deck_detail"),
 	},
 	output: {
 		path: path.resolve(__dirname, "./build/generated/webpack"),
