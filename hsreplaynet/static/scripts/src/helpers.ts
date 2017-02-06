@@ -197,67 +197,57 @@ const cardsetScheme: ChartScheme = {
 const classColorScheme: ChartScheme = {
 	"all": {
 		stroke: "rgba(169, 169, 169, 1)",
-		fill: "rgba(169, 169, 169, 0.3)",
+		fill: "rgba(169, 169, 169, 0.7)",
 		name: "All",
 	},
-
 	"neutral": {
 		stroke: "rgba(169, 169, 169, 1)",
-		fill: "rgba(169, 169, 169, 0.3)",
+		fill: "rgba(169, 169, 169, 0.7)",
 		name: "Neutral",
 	},
-
 	"druid": {
 		stroke: "rgba(255, 125, 10, 1)",
-		fill: "rgba(255, 125, 10, 0.3)",
+		fill: "rgba(255, 125, 10, 0.7)",
 		name: "Druid",
 	},
-
 	"hunter": {
 		stroke: "rgba(171, 212, 114, 1)",
-		fill: "rgba(171, 212, 114, 0.3)",
+		fill: "rgba(171, 212, 114, 0.7)",
 		name: "Hunter",
 	},
-
 	"mage": {
 		stroke: "rgba(105, 204, 240, 1)",
-		fill: "rgba(105, 204, 240, 0.3)",
+		fill: "rgba(105, 204, 240, 0.7)",
 		name: "Mage",
 	},
-
 	"paladin": {
 		stroke: "rgba(245, 140, 186, 1)",
-		fill: "rgba(245, 140, 186, 0.3)",
+		fill: "rgba(245, 140, 186, 0.7)",
 		name: "Paladin",
 	},
-
 	"priest": {
 		stroke: "rgba(210, 210, 210, 1)",
-		fill: "rgba(255, 255, 255, 0.3)",
+		fill: "rgba(210, 210, 210, 0.7)",
 		name: "Priest",
 	},
-
 	"rogue": {
 		stroke: "rgba(255, 217, 26, 1)",
-		fill: "rgba(255, 240, 26, 0.3)",
+		fill: "rgba(255, 240, 26, 0.7)",
 		name: "Rogue",
 	},
-
 	"shaman": {
 		stroke: "rgba(0, 122, 222, 1)",
-		fill: "rgba(0, 122, 222, 0.3)",
+		fill: "rgba(0, 122, 222, 0.7)",
 		name: "Shaman",
 	},
-
 	"warlock": {
 		stroke: "rgba(148, 130, 201, 1)",
-		fill: "rgba(148, 130, 201, 0.3)",
+		fill: "rgba(148, 130, 201, 0.7)",
 		name: "Warlock",
 	},
-
 	"warrior": {
 		stroke: "rgba(199, 156, 110, 1)",
-		fill: "rgba(199, 156, 110, 0.3)",
+		fill: "rgba(199, 156, 110, 0.7)",
 		name: "Warrior",
 	},
 };
