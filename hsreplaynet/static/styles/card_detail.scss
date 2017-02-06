@@ -1,0 +1,21 @@
+.card-detail-container {
+	width: 100%;
+}
+@media (min-width: 1400px) {
+	.card-detail-container {
+		width: 80%;
+	}
+}
+
+.chart-column {
+	padding-left: 0;
+	padding-right: 0;
+
+}
+	.chart-wrapper {
+		max-width: 250px;
+		margin: 0 auto;
+		&.wide {
+			max-width: 500px;
+		}
+	}

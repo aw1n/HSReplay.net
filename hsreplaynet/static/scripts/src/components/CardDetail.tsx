@@ -1,16 +1,23 @@
 import * as React from "react";
-import CardDetailLineChart from "./charts/CardDetailLineChart";
+import WinrateByTurnLineChart from "./charts/WinrateByTurnLineChart";
 import CardDetailBarChart from "./charts/CardDetailBarChart";
 import CardDetailGauge from "./charts/CardDetailGauge";
 import CardDetailValue from "./charts/CardDetailValue";
 import CardDetailPieChart from "./charts/CardDetailPieChart";
 import CardDetailFilter from "./CardDetailFilter";
+import CardDetailDecksList from "./charts/CardDetailDecksList";
+import CardRankingTable from "./CardRankingTable";
+import PopularityLineChart from "./charts/PopularityLineChart";
+import WinrateLineChart from "./charts/WinrateLineChart";
 import LoadingIndicator from "./LoadingIndicator";
+import TurnPlayedBarChart from "./charts/TurnPlayedBarChart";
 import TopCardsList from "./TopCardsList";
+import ClassFilter from "./ClassFilter";
 import {
 	FilterData, Filter, FilterElement, FilterDefinition, KeyValuePair,
 	Query, RenderData, ChartSeries, ChartSeriesMetaData, DataPoint} from "../interfaces";
 import HearthstoneJSON from "hearthstonejson";
+import {toTitleCase, getChartScheme} from "../helpers";
 
 interface CardDetailState {
 	queries?: Query[];
@@ -21,6 +28,8 @@ interface CardDetailState {
 	fetching?: boolean;
 	cardData?: Map<string, any>;
 	card?: any;
+	classDistribution?: RenderData;
+	winrateByTurn?: RenderData;
 }
 
 interface CardDetailProps extends React.ClassAttributes<CardDetail> {
@@ -42,7 +51,8 @@ export default class CardDetail extends React.Component<CardDetailProps, CardDet
 			card: null,
 		}
 
-		this.fetchFilters();
+		// this.fetchFilters();
+		this.fetch();
 
 		new HearthstoneJSON().getLatest((data) => {
 			const map = new Map<string, any>();
@@ -57,36 +67,6 @@ export default class CardDetail extends React.Component<CardDetailProps, CardDet
 		});
 	}
 
-	mockCharts(): JSX.Element[] {
-		return [
-			<div style={{width: "250px", background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px"}}>
-				<CardDetailGauge
-					data={[{data: [{x: "data", y: 2}, {x: "empty", y: 80}], name:"Used to kill Jaraxxus"}]}
-					title="Used to kill Jaraxxus"
-					/>
-			</div>
-		]
-	}
-
-	largeMockCharts(): JSX.Element[] {
-		return [
-			<div style={{background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px", display: "flex", justifyContent: "center", padding: "5px", width: "500px"}}>
-				<TopCardsList
-					title="Top cards played on same turn"
-					cardData={this.state.cardData}
-					cardIds={["KAR_077", "KAR_075", "EX1_166"]}
-				/>
-			</div>,
-			<div style={{background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px", display: "flex", justifyContent: "center", padding: "5px", width: "500px"}}>
-				<TopCardsList
-					title="Most popular targets"
-					cardData={this.state.cardData}
-					cardIds={["KAR_077", "KAR_075", "EX1_166"]}
-				/>
-			</div>
-		]
-	}
-
 	componentDidUpdate() {
 		if (this.state.fetching) {
 			window.setTimeout(() => this.forceUpdate(), 1000);
@@ -94,203 +74,201 @@ export default class CardDetail extends React.Component<CardDetailProps, CardDet
 	}
 
 	render(): JSX.Element {
-		const charts = [];
-		const smallCharts = [];
-		smallCharts.push(this.mockCharts());
-
-		this.state.renders.forEach((data: RenderData, name: string) => {
-			switch(data.render_as) {
-				case "gauge":
-					smallCharts.push(
-						<div style={{width: "250px", background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px"}}>
-							<CardDetailGauge
-								data={data.series}
-								title={data.title}
-							/>
-						</div>
-					);
-					break;
-				case "single_value":
-					smallCharts.push(
-						<div style={{width: "250px", background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px"}}>
-							<CardDetailValue
-								data={data.series}
-								title={data.title}
-							/>
-						</div>
-					);
-					break;
-				case "class_pie_chart":
-					smallCharts.push(
-						<div style={{width: "250px", background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px"}}>
-							<CardDetailPieChart
-								data={data.series}
-								title={data.title}
-							/>
-						</div>
-					);
-					break;
-				case "bar_chart":
-					charts.push(<div style={{background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px"}}>
-						<CardDetailBarChart
-							data={data.series}
-							title={data.title}
-							domainY={data.domain_y}
-							domainX={data.domain_x}
-							labelY={data.label_y}
-							labelX={data.label_x}
-					/></div>)
-					break;
-				case "line_chart":
-					if (data.series[0].data.length === 0) {
-						charts.push(<div style={{background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px"}}>"Not enough data"</div>);
-						break;
-					}
-					charts.push(<div style={{background: "rgba(0,0,255,0.1)", border: "2px solid rgba(0,0,255,0.5)", margin: "5px"}}>
-						<CardDetailLineChart
-							data={data.series}
-							title={data.title}
-							domainY={data.domain_y}
-							domainX={data.domain_x}
-							labelY={data.label_y}
-							labelX={data.label_x}
-					/></div>)
-					break;
-				case "list":
-					const lines = [];
-					lines.push(<h4>{data.title}</h4>)
-					data.series[0].data.forEach(dataPoint => {
-						lines.push(<span>{dataPoint.x + ": " + dataPoint.y}</span>)
-					})
-					charts.push(<div style={{border: "1px solid black"}}>{lines}</div>);
-					break;
-			}
-		});
-
-
-		charts.unshift(<div style={{display: "flex", justifyContent: "center"}}>
-				{this.largeMockCharts()}
-			</div>);
-		if(smallCharts) {
-			charts.unshift(<div style={{display: "flex", justifyContent: "center"}}>
-				{smallCharts}
-			</div>);
+		let classChart = null;
+		if (this.state.classDistribution) {
+			classChart = (
+				<CardDetailPieChart
+					percent
+					data={this.state.classDistribution.series}
+					title={"Class Popularity"}
+					scheme={getChartScheme("class")}
+					textPrecision={2}
+					sortByValue
+					removeEmpty
+				/>
+			);
 		}
 
-		return <div className="row">
-			<div className="col-lg-4" style={{textAlign: "center"}}>
-				<img src={"http://media.services.zam.com/v1/media/byName/hs/cards/enus/" + this.props.cardId + ".png"} />
-				<div className="row">
-					<div className="col-lg-8 col-lg-offset-2" style={{paddingBottom: "20px", fontStyle: "italic"}}>
-						{this.state.card ? this.state.card.flavor : ""}
+		let turnWinrateChart = null;
+		if (this.state.winrateByTurn) {
+			turnWinrateChart = (
+				<WinrateByTurnLineChart
+					data={this.state.winrateByTurn.series}
+					widthRatio={2}
+				/>
+			)
+		}
+
+		let popularityChart = null;
+		if (this.state.winrateByTurn) {
+			popularityChart = (
+				<PopularityLineChart
+					widthRatio={2}
+				/>
+			)
+		}
+
+		let winrateChart = null;
+		if (this.state.winrateByTurn) {
+			winrateChart = (
+				<WinrateLineChart
+					widthRatio={2}
+				/>
+			)
+		}
+
+		let turnPlayedChart = null;
+		if (this.state.winrateByTurn) {
+			turnPlayedChart = (
+				<TurnPlayedBarChart
+					widthRatio={2}
+				/>
+			)
+		}
+
+		let topCardsPlayed = (
+			<CardRankingTable
+				cardData={this.state.cardData}
+				numRows={5}
+				tableRows={[
+					{card_id: "KAR_077", rank: "1", popularity: "7.4"},
+					{card_id: "KAR_075", rank: "2", popularity: "6.5"},
+					{card_id: "EX1_166", rank: "3", popularity: "3.8"},
+					{card_id: "GAME_005", rank: "4", popularity: "2.3"},
+					{card_id: "NEW1_003", rank: "5", popularity: "1.9"},
+				]}
+			/>
+		);
+
+		return <div className="card-detail-container">
+			<div className="row">
+				<div className="col-lg-4" style={{textAlign: "center"}}>
+					<img src={"http://media.services.zam.com/v1/media/byName/hs/cards/enus/" + this.props.cardId + ".png"} height="400px" />
+					<div className="row">
+					</div>
+					<div className="btn-group" role="group">
+						<button type="button" className="btn btn-primary">Standard</button>
+						<button type="button" className="btn btn-default disabled">Wild</button>
+						<button type="button" className="btn btn-default disabled">Arena</button>
+					</div>
+					<div style={{maxWidth: "250px", margin: "0 auto"}}>
+						{classChart}
 					</div>
 				</div>
-				<div className="row">
-					<div className="col-lg-10 col-lg-offset-1">
-						<CardDetailFilter
-							filterData={this.state.filterData}
-							defaultSelection={this.state.selectedFilters}
-							selectionChanged={(key, value) => {
-								console.warn("RE-IMPLEMENT ME")
-							}}
-							premiumAvailable={this.props.isPremium}
-						/>
+				<div className="col-lg-8">
+					<h1 style={{paddingTop: "40px"}}>{this.state.card && this.state.card.name}</h1>
+					<h5>{this.state.card && (toTitleCase(this.state.card.playerClass) + " " + toTitleCase(this.state.card.type))}</h5>
+					<div className="row">
+						<div className="col-lg-6 col-md-6">
+							{popularityChart}
+						</div>
+						<div className="col-lg-6 col-md-6">
+							{winrateChart}
+						</div>
 					</div>
-				</div>
-			</div>
-			<div className="col-lg-8" style={{paddingRight: "100px"}}>
-				{this.buildLoadingBar()}
-				{charts}
-				<div style={{display: "flex", justifyContent: "center", paddingTop: "30px"}}>
-					<LoadingIndicator height={20}/>
-				</div>
-			</div>
-		</div>
-	}
-
-	buildLoadingBar(): JSX.Element {
-		if (!this.state.fetching) {
-			return null;
-		}
-
-		const duration = this.state.queries && this.state.queries[0].avg_query_duration_seconds || 60;
-		const remaining =  this.state.queries && this.state.queryTime && duration - (new Date().getTime() - this.state.queryTime.getTime()) / 1000;
-
-		if (!remaining || duration - remaining < 1) {
-			return null;
-		}
-		if (!this.state.queries) {
-			return <h2>Loading...</h2>;
-		}
-
-		const percent = remaining && Math.round((duration - remaining) / duration * 100);
-
-		return <div>
-			<h2>{"Loading... (" + percent + "%)"}</h2>
-			<div className="progress">
-				<div className="progress-bar" role="progressbar" aria-valuenow={percent} aria-valuemin="0" aria-valuemax="100" style={{width:percent + "%"}}>
-					<span className="sr-only">foo</span>
+					<div className="row">
+						<div className="col-lg-6 col-md-6">
+							{turnPlayedChart}
+						</div>
+						<div className="col-lg-6 col-md-6">
+							{turnWinrateChart}
+						</div>
+					</div>
+					<div className="row">
+						<div className="col-lg-6 col-md-6">
+							<h4>Top cards played on same turn</h4>	
+							{topCardsPlayed}
+						</div>
+						<div className="col-lg-6 col-md-6">
+							<h4>Most popular targets</h4>	
+							{topCardsPlayed}
+						</div>
+					</div>
+					<div style={{display: "flex", justifyContent: "center", paddingTop: "30px"}}>
+						<LoadingIndicator height={20}/>
+					</div>
 				</div>
 			</div>
 		</div>;
 	}
 
-	fetchFilters(): void {
-		fetch("https://dev.hsreplay.net/analytics/filters", {
-			credentials: "include",
-		}).then((response) => {
-			return response.json();
-		}).then((json: any) => {
-			const defaultFilters = new Map<string, string>();
-			const data = json as FilterData;
-			data.filters.forEach(filter => {
-				defaultFilters.set(filter.name, filter.elements.find(x => x.is_default).name);
-			})
-			defaultFilters.set("TimeRange", "CURRENT_SEASON");
-			this.setState({filterData: json, selectedFilters: defaultFilters})
-			this.fetchQueries();
-		});
-	}
+	// fetchFilters(): void {
+	// 	fetch("https://dev.hsreplay.net/analytics/filters", {
+	// 		credentials: "include",
+	// 	}).then((response) => {
+	// 		return response.json();
+	// 	}).then((json: any) => {
+	// 		const defaultFilters = new Map<string, string>();
+	// 		const data = json as FilterData;
+	// 		data.filters.forEach(filter => {
+	// 			defaultFilters.set(filter.name, filter.elements.find(x => x.is_default).name);
+	// 		})
+	// 		defaultFilters.set("TimeRange", "CURRENT_SEASON");
+	// 		this.setState({filterData: json, selectedFilters: defaultFilters})
+	// 		this.fetchQueries();
+	// 	});
+	// }
 
-	fetchQueries(): void {
-		fetch("https://dev.hsreplay.net/analytics/inventory/card/" + this.props.cardId, {
-			credentials: "include",
-		}).then((response) => {
-			return response.json();
-		}).then((json: any) => {
-			console.log("received queries for", this.props.cardId, ":", json.map(x => x.endpoint));
-			this.state.queries = json;
-			this.setState({fetching: true, queryTime: new Date()})
-			this.state.queries.filter(x => x.avg_query_duration_seconds).forEach(query => {
-				this.fetchQuery(query);
-			})
-			this.state.queries.filter(x => !x.avg_query_duration_seconds).forEach(query => {
-				this.fetchQuery(query);
-			})
-		});
-	}
+	// fetchQueries(): void {
+	// 	fetch("https://dev.hsreplay.net/analytics/inventory/card/" + this.props.cardId, {
+	// 		credentials: "include",
+	// 	}).then((response) => {
+	// 		return response.json();
+	// 	}).then((json: any) => {
+	// 		console.log("received queries for", this.props.cardId, ":", json.map(x => x.endpoint));
+	// 		this.state.queries = json;
+	// 		this.setState({fetching: true, queryTime: new Date()})
+	// 		this.state.queries.filter(x => x.avg_query_duration_seconds).forEach(query => {
+	// 			this.fetchQuery(query);
+	// 		})
+	// 		this.state.queries.filter(x => !x.avg_query_duration_seconds).forEach(query => {
+	// 			this.fetchQuery(query);
+	// 		})
+	// 	});
+	// }
 
-	fetchQuery(query: Query): void {
-		if (query.endpoint === "/analytics/query/single_card_winrate_when_drawn_by_turn") {
-			console.warn("SKIPPING", query.endpoint)
-			return;
-		}
-		let url = "https://dev.hsreplay.net" + query.endpoint + "?"
-			+ query.params.map(param => param+ "=" + this.resolveParam(param))
-				.reduce((prev, curr) => prev + "&" + curr);
-		console.log("Fetching", query.endpoint);
-		fetch(url, {
-			credentials: "include"
-		}).then((response) => {
+	// fetchQuery(query: Query): void {
+	// 	if (query.endpoint === "/analytics/query/single_card_winrate_when_drawn_by_turn") {
+	// 		console.warn("SKIPPING", query.endpoint)
+	// 		return;
+	// 	}
+	// 	let url = "https://dev.hsreplay.net" + query.endpoint + "?"
+	// 		+ query.params.map(param => param+ "=" + this.resolveParam(param))
+	// 			.reduce((prev, curr) => prev + "&" + curr);
+	// 	console.log("Fetching", query.endpoint);
+	// 	fetch(url, {
+	// 		credentials: "include"
+	// 	}).then((response) => {
+	// 		return response.json();
+	// 	}).then((json: any) => {
+	// 		this.setState({
+	// 			renders: this.state.renders.set(query.endpoint, json),
+	// 			fetching: false
+	// 		});
+	// 	}).catch(() => {
+	// 		this.setState({fetching: false})
+	// 	});
+	// }
+
+	fetch() {
+		fetch(
+			"https://dev.hsreplay.net/analytics/query/single_card_winrate_by_turn?card_id=" + this.props.cardId + "&TimeRange=CURRENT_SEASON&RankRange=ALL&GameType=RANKED_STANDARD",
+			{credentials: "include"}
+		).then((response) => {
 			return response.json();
 		}).then((json: any) => {
-			this.setState({
-				renders: this.state.renders.set(query.endpoint, json),
-				fetching: false
-			});
-		}).catch(() => {
-			this.setState({fetching: false})
-		});
+			console.log(json)
+			this.setState({winrateByTurn: json})
+		})
+		fetch(
+			"https://dev.hsreplay.net/analytics/query/single_card_class_distribution_by_play_count?card_id=" + this.props.cardId + "&TimeRange=CURRENT_SEASON&RankRange=ALL&GameType=RANKED_STANDARD",
+			{credentials: "include"}
+		).then((response) => {
+			return response.json();
+		}).then((json: any) => {
+			console.log(json)
+			this.setState({classDistribution: json})
+		})
 	}
 
 	resolveParam(param: string): string {

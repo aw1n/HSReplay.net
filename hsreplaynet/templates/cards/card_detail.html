@@ -6,7 +6,7 @@
 
 {% block fullcontent %}
 <div id="card-info" card-id="{{card.id}}"></div>
-<div id="card-container">
+<div id="card-container" style="display: flex;justify-content: center;">
 </div>
 {% if user.is_authenticated and user.is_staff %}
 	{% render_bundle "card_detail" %}
