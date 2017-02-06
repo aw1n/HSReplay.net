@@ -182,3 +182,14 @@ export interface ChartSchemeData {
 	stroke: string;
 	name?: string;
 }
+
+export interface ChartMetaData {
+	xDomain: [number, number];
+	xMinMax: [DataPoint, DataPoint];
+	xCenter: number;
+	yDomain: [number, number];
+	yMinMax: [DataPoint, DataPoint];
+	yCenter: number;
+	seasonTicks: number[];
+	midLinePosition: number;
+}

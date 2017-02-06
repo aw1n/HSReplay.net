@@ -1,4 +1,4 @@
-import {ChartScheme, ChartSchemeType} from "./interfaces";
+import {ChartScheme, ChartSchemeType, DataPoint, ChartMetaData} from "./interfaces";
 
 export function staticFile(file: string) {
 	return STATIC_URL + file;
@@ -268,3 +268,51 @@ export const setNames = {
 	"gangs": "Mean Streets of Gadgetzan"
 };
 
+export function getChartMetaData(data: DataPoint[], midLine?: number, seasonTicks?: boolean): ChartMetaData {
+		const ticks = [];
+		const xMin = data[0];
+		const xMax = data[data.length - 1];
+		const xCenter = +xMin.x + (+xMax.x - +xMin.x) / 2
+
+		if (seasonTicks) {
+			const maxDate = new Date(xMax.x);
+			const season = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+			ticks.unshift(season.getTime());
+			season.setMonth(season.getMonth() - 1);
+			ticks.unshift(season.getTime());
+		}
+
+		let yMin = data[0];
+		let yMax = data[0];
+		data.forEach(d => {
+			if (d.y < yMin.y) {
+				yMin = d;
+			}
+			else if (d.y > yMax.y) {
+				yMax = d;
+			}
+		});
+
+		if (!midLine) {
+			midLine = (yMax.y + yMin.y)/2
+		}
+
+		const minDelta = Math.abs(midLine - yMin.y);
+		const maxDelta = Math.abs(midLine - yMax.y);
+		const midLinePosition = (maxDelta/(minDelta+maxDelta))
+
+		const domainDelta = Math.ceil(Math.max(maxDelta, minDelta) / 5) * 5;
+		const domainMin = midLine - domainDelta;
+		const domainMax = midLine + domainDelta;
+
+		return {
+			xDomain: [+xMin.x, +xMax.x],
+			xMinMax: [xMin, xMax],
+			xCenter: xCenter,
+			yDomain: [domainMin, domainMax],
+			yMinMax: [yMin, yMax],
+			yCenter: midLine,
+			seasonTicks: ticks,
+			midLinePosition: midLinePosition,
+		};
+}
