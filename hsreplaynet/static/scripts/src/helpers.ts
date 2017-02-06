@@ -316,3 +316,9 @@ export function getChartMetaData(data: DataPoint[], midLine?: number, seasonTick
 			midLinePosition: midLinePosition,
 		};
 }
+
+export function toPrettyNumber(n: number): string {
+	const divisor = 10 ** (Math.floor(Math.log10(n)) - 1);
+	n = Math.floor(n / divisor) * divisor;
+	return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}

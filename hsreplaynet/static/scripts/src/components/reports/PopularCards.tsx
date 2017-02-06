@@ -5,8 +5,9 @@ import CardTile from "../CardTile";
 import ClassFilter from "../ClassFilter";
 import CardDetailPieChart from "../charts/CardDetailPieChart";
 import CardDetailBarChart from "../charts/CardDetailBarChart";
+import CardRankingTable from "../CardRankingTable";
 import LoadingIndicator from "../LoadingIndicator";
-import {setNames, toTitleCase} from "../../helpers";
+import {setNames, toTitleCase, toPrettyNumber} from "../../helpers";
 
 interface PopularCardsState {
 	topCardsIncluded?: Map<string, TableData>;
@@ -135,7 +136,7 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 				<h3>{this.state.error}</h3>
 			</div>;
 		}
-		else if (!loaded) {
+		else if (!loaded || !topCardsIncluded || !topCardsPlayed) {
 			content = <div className="loading-message">
 				<h3>Loading...</h3>
 				<div className="loading-wrapper">
@@ -173,16 +174,26 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 					</div>
 				</div>,
 				<div className="row">
-					<div className="table-wrapper col-lg-6 col-md-6 col-sm-12 col-xs-12">
+					<div className="col-lg-6 col-md-6 col-sm-12 col-xs-12">
 						<h2>Most included cards</h2>
 						<div>
-							{this.buildTable(topCardsIncluded, prevTopCardsIncluded)}
+							<CardRankingTable 
+								numRows={this.state.numRowsVisible}
+								tableRows={topCardsIncluded.series.data[this.getSelectedClass()]}
+								previousTableRows={prevTopCardsIncluded && prevTopCardsIncluded.series.data[this.getSelectedClass()]}
+								cardData={this.props.cardData}
+							/>
 						</div>
 					</div>
-					<div className="table-wrapper col-lg-6 col-md-6 col-sm-12 col-xs-12">
+					<div className="col-lg-6 col-md-6 col-sm-12 col-xs-12">
 						<h2>Most played cards</h2>
 						<div>
-							{this.buildTable(topCardsPlayed, prevTopCardsPlayed)}
+							<CardRankingTable 
+								numRows={this.state.numRowsVisible}
+								tableRows={topCardsPlayed.series.data[this.getSelectedClass()]}
+								previousTableRows={prevTopCardsPlayed && prevTopCardsPlayed.series.data[this.getSelectedClass()]}
+								cardData={this.props.cardData}
+							/>
 						</div>
 					</div>
 				</div>,
@@ -190,13 +201,6 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 					{showMoreButton}
 				</div>
 			];
-		}
-
-		let numGames = 0;
-		if (topCardsPlayed) {
-			numGames = topCardsPlayed.series.metadata.total_games;
-			const divisor = 10 ** (Math.floor(Math.log10(numGames)) - 1);
-			numGames = Math.floor(numGames / divisor) * divisor;
 		}
 
 		const hasNext = this.state.index > 0;
@@ -220,6 +224,8 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 			}
 		}
 
+		const replayCount = topCardsPlayed && toPrettyNumber(topCardsPlayed.series.metadata.total_games);
+
 		return <div className="report-container" id="card-popularity-report">
 			<div className="row">
 				<div className="info-column col-lg-4">
@@ -237,7 +243,7 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 							</button>
 						</div>
 						<div className="col-md-12">
-							{!this.state.error && loaded ? ("Based on " + this.commaSeparate(numGames) + " replays") : null}
+							{!this.state.error && loaded ? ("Based on " + replayCount + " replays") : null}
 						</div>
 						<div className="col-md-12">
 							<ClassFilter
@@ -258,10 +264,6 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 			<div className="row">
 			</div>
 		</div>;
-	}
-
-	commaSeparate(num: number): string {
-		return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	}
 
 	buildChartSeries(topCardsIncluded: TableData): ChartSeries[] {
@@ -300,67 +302,6 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 			})
 		}
 		return chartSeries;
-	}
-
-	buildTable(tableData: TableData, previous: TableData): JSX.Element {
-		const cardRows = [];
-		if (this.props.cardData) {
-			if (tableData) {
-				const selectedClass = this.getSelectedClass();
-				const rows = tableData.series.data[selectedClass];
-				const prevRows = previous && previous.series.data[selectedClass];
-				if (rows) {
-					rows.slice(0, this.state.numRowsVisible).forEach(row => {
-						const card = this.props.cardData.get(row["card_id"]);
-						let tendency = 0;
-						if (prevRows) {
-							const prev = prevRows.find(prev => prev["card_id"] == row["card_id"]);
-							if (prev) {
-								tendency = +prev["rank"] - +row["rank"];
-							}
-						}
-						cardRows.push(
-							this.buildCardRow(card, row["popularity"], row["rank"], tendency)
-						);
-					})
-				}
-			}
-		}
-		return <table className="table table-striped">
-			<thead>
-			<tr>
-				<th>Rank</th>
-				<th>Card</th>
-				<th className="hidden-xs">Popularity</th>
-				<th className="visible-xs">Pop.</th>
-			</tr>
-			</thead>
-			<tbody>
-				{cardRows}
-			</tbody>
-		</table>;
-	}
-
-	buildCardRow(card: any, popularity: string, rank: string, tendency: number): JSX.Element {
-		const tendencyStr = tendency === 0 ? "    " : (tendency > 0 ? "▲" : "▼");
-		const title = tendency === 0 ? "" : (tendency > 0 ? "up from yesterday" : "down from yesterday");
-		const digits = Math.min(Math.max(0, Math.floor(Math.log10(1/+popularity))), 2) + 2;
-		return <tr className="card-table-row">
-			<td className="rank-cell">
-				<span style={{color:tendency === 0 ? "black" : (tendency > 0 ? "green" : "red")}}>
-					{tendencyStr}
-				</span>
-				{"#" + rank}
-			</td>
-			<td>
-				<div className="card-wrapper">
-					<CardTile height={34} card={card} count={1} rarityColored />
-				</div>
-			</td>
-			<td style={{lineHeight: "19px", fontWeight: "bold"}}>
-				{(+popularity).toFixed(digits) + "%"}
-			</td>
-		</tr>;
 	}
 
 	getSelectedClass(): string {
