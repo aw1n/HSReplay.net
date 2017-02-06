@@ -161,9 +161,7 @@ export interface ChartSeries {
 }
 
 export interface ChartSeriesMetaData {
-	is_winrate_data?: boolean;
-	num_data_points?: number;
-	chart_scheme?: ChartSchemeType;
+	[metaData: string]: any;
 }
 
 export interface DataPoint {
