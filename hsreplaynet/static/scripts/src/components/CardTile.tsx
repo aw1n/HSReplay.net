@@ -41,7 +41,7 @@ export default class CardTile extends React.Component<CardTileProps, any> {
 
 		let gemClassNames = ["card-gem"];
 		if (this.props.rarityColored) {
-			gemClassNames.push("rarity-" + this.props.card.rarity.toLowerCase());
+			gemClassNames.push("rarity-" + (this.props.card.rarity || "free").toLowerCase());
 		}
 
 		return (
