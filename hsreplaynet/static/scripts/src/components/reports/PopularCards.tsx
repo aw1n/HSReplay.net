@@ -146,10 +146,10 @@ export default class PopularCards extends React.Component<PopularCardsProps, Pop
 		}
 		else {
 			const chartSeries = this.buildChartSeries(topCardsIncluded);
-			const rarityChart = chartSeries[0] && <CardDetailPieChart title="Rarity" data={[chartSeries[0]]}/>
-			const typeChart = chartSeries[1] && <CardDetailPieChart title="Type" data={[chartSeries[1]]}/>
-			const setChart = chartSeries[2] && <CardDetailPieChart title="Set" data={[chartSeries[2]]}/>
-			const costChart = chartSeries[3] && <CardDetailPieChart title="Cost" data={[chartSeries[3]]}/>
+			const rarityChart = chartSeries[0] && <CardDetailPieChart percent title="Rarity" data={[chartSeries[0]]}/>
+			const typeChart = chartSeries[1] && <CardDetailPieChart percent title="Type" data={[chartSeries[1]]}/>
+			const setChart = chartSeries[2] && <CardDetailPieChart percent title="Set" data={[chartSeries[2]]}/>
+			const costChart = chartSeries[3] && <CardDetailPieChart percent title="Cost" data={[chartSeries[3]]}/>
 			content = [
 				<div className ="row">
 					<div className="chart-column col-lg-3 col-md-3 col-sm-6 col-xs-6">
