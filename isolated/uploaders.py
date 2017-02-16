@@ -57,10 +57,12 @@ def get_upload_url(shortid):
 
 
 def get_auth_token(headers):
-	if "Authorization" not in headers:
+	lowercase_headers = {k.lower(): v for k, v in headers.items()}
+
+	if "authorization" not in lowercase_headers:
 		raise Exception("The Authorization Header is required.")
 
-	auth_components = headers["Authorization"].split()
+	auth_components = lowercase_headers["authorization"].split()
 	if len(auth_components) != 2:
 		raise Exception("Authorization header must have a scheme and a token.")
 
