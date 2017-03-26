@@ -36,7 +36,6 @@
 				<p>
 					<a href="{% url 'my_replays' %}" class="promo-button">My Replays</a>
 					<a href="{% url 'account_edit' %}" class="promo-button-outline">
-						<img src="{% static 'images/bnet.png' %}"/>
 						<span>{{ user.username }}</span>
 					</a>
 				</p>
@@ -46,8 +45,8 @@
 			{% else %}
 				{% include 'login_button.html' %}
 				<p class="promo-help">
-					You don't need a new account&mdash;we use <img src="{% static 'images/bnet.png' %}"/>
-					<abbr title="We'll send you to the offfical Battle.net site where you can securely log in.&#10;HSReplay.net does not gain access to your Battle.net email address or password.">Battle.net</abbr>.
+					You don't need a new account&mdash;we use
+					<abbr title="We'll send you to the offfical Blizzard site where you can securely log in.&#10;HSReplay.net does not gain access to your Blizzard email address or password.">Blizzard Accounts</abbr>.
 				</p>
 			{% endif %}
 		</div>
@@ -153,9 +152,12 @@
 				<div class="col-lg-6 col-xs-12">
 					<dl>
 						<dt>How do I sign in?</dt>
-						<dd>Click on the "Log in with Battle.net" button and we'll send you to Battle.net. HSReplay.net does not have access to your password.</dd>
+						<dd>
+							Click on the "Log in with Blizzard" button and we'll send you to Blizzard.<br />
+							This is <a href="https://dev.battle.net/docs/read/log_in_with_blizzard" target="_blank">officially supported</a> and fully secure.
+							HSReplay.net never gains access to your Blizzard email address or password.</dd>
 						<dt>Do I need to sign in?</dt>
-						<dd>Not at all! Just <a href="{% url 'downloads' %}">download Hearthstone Deck Tracker</a> and use it to upload and share your replays. You can then connect your replays to your Battle.net account at any time.</dd>
+						<dd>Not at all! Just <a href="{% url 'downloads' %}">download Hearthstone Deck Tracker</a> and use it to upload and share your replays. You can then connect your replays to your Blizzard account at any time.</dd>
 						<dt>How do I share a replay?</dt>
 						<dd>Simply send the link to your friends. You can also use the "Share" dialog on the replay page, where you can even set the specific turn to link to.</dd>
 					</dl>
