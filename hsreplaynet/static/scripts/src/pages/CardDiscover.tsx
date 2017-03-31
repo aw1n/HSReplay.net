@@ -16,11 +16,7 @@ import {
 	cardSorting, cleanText, setNames, toDynamicFixed, toPrettyNumber,
 	toTitleCase, wildSets, winrateData, slangToCardId,
 } from "../helpers";
-import {ChartSeries, TableData} from "../interfaces";
-import {
-	genCacheKey, getQueryMapArray, getQueryMapDiff, getQueryMapFromLocation, parseQuery,
-	QueryMap, queryMapHasChanges, setLocationQueryString, setQueryMap, toQueryString,
-} from "../QueryParser";
+import {ChartSeries, FragmentChildProps, TableData} from "../interfaces";
 import InfoboxLastUpdated from "../components/InfoboxLastUpdated";
 import UserData from "../UserData";
 
@@ -37,6 +33,40 @@ interface CardFilters {
 
 export type ViewType = "cards" | "statistics" | "personal";
 
+interface CardDiscoverProps extends FragmentChildProps, React.ClassAttributes<CardDiscover> {
+	cardData: CardData;
+	user: UserData;
+	viewType: ViewType;
+	account?: string;
+	setAccount?: (account: string) => void;
+	cost?: string;
+	filterSparse?: string;
+	setFilterSparse?: (filterSparse: string) => void;
+	format?: string;
+	setFormat?: (format: string) => void;
+	gameType?: string;
+	setGameType?: (gameType: string) => void;
+	mechanics?: string;
+	playerClass?: FilterOption;
+	setPlayerClass?: (playerClass: FilterOption) => void;
+	race?: string;
+	rankRange?: string;
+	setRankRange?: (rankRange: string) => void;
+	rarity?: string;
+	set?: string;
+	sortBy?: string;
+	setSortBy?: (sortBy: string) => void;
+	sortDirection?: string;
+	setSortDirection?: (sortDirection: string) => void;
+	text?: string;
+	setText?: (text: string) => void;
+	timeRange?: string;
+	setTimeRange?: (timeRange: string) => void;
+	type?: string;
+	exclude?: string;
+	setExclude?: (exclude: string) => void;
+}
+
 interface CardDiscoverState {
 	cards?: any[];
 	filteredCards?: any[];
@@ -44,14 +74,7 @@ interface CardDiscoverState {
 	hasPersonalData?: boolean;
 	hasStatisticsData?: boolean;
 	numCards?: number;
-	queryMap?: QueryMap;
 	showFilters?: boolean;
-}
-
-interface CardDiscoverProps extends React.ClassAttributes<CardDiscover> {
-	cardData: CardData;
-	user: UserData;
-	viewType: ViewType;
 }
 
 const PLACEHOLDER_MINION = STATIC_URL + "images/loading_minion.png";
@@ -79,45 +102,9 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		JADE_LOTUS: ["DRUID", "ROGUE", "SHAMAN"],
 		KABAL: ["MAGE", "PRIEST", "WARLOCK"],
 	};
-	readonly defaultQueryMap: QueryMap = {
-		account: "-",
-		cost: "",
-		filterSparse: "",
-		format: "",
-		gameType: "RANKED_STANDARD",
-		mechanics: "",
-		playerClass: "ALL",
-		race: "",
-		rankRange: "ALL",
-		rarity: "",
-		set: "",
-		sortBy: "timesPlayed",
-		sortDirection: "descending",
-		text: "",
-		timeRange: "LAST_14_DAYS",
-		type: "",
-	};
-
-	private readonly allowedValues = {
-		gameType: ["RANKED_STANDARD", "RANKED_WILD", "ARENA"],
-		rankRange: [],
-		region: [],
-		timeRange: ["LAST_14_DAYS"],
-	};
-
-	private readonly allowedValuesPremium = {
-		gameType: ["RANKED_STANDARD", "RANKED_WILD", "ARENA"],
-		rankRange: ["LEGEND_THROUGH_TEN"],
-		region: [],
-		timeRange: ["LAST_1_DAY", "LAST_3_DAYS", "LAST_7_DAYS", "LAST_14_DAYS"],
-	};
 
 	constructor(props: CardDiscoverProps, state: CardDiscoverState) {
 		super(props, state);
-		const account = props.user.getAccounts()[0];
-		if (account) {
-			this.defaultQueryMap.account = account.region + "-" + account.lo;
-		}
 		this.state = {
 			cards: null,
 			filterCounts: null,
@@ -125,7 +112,6 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 			hasPersonalData: false,
 			hasStatisticsData: false,
 			numCards: 24,
-			queryMap: getQueryMapFromLocation(this.defaultQueryMap, this.getAllowedValues()),
 			showFilters: false,
 		};
 		switch (this.props.viewType) {
@@ -161,10 +147,6 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		}
 	}
 
-	getAllowedValues(): any {
-		return this.props.user.isPremium() ? this.allowedValuesPremium : this.allowedValues;
-	}
-
 	onSearchScroll(): void {
 		if (this.state.filteredCards.length > this.state.numCards) {
 			const atBottom = () => document.body.scrollTop + (window.innerHeight + 100) >= document.body.scrollHeight;
@@ -194,7 +176,6 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 				this.updateFilteredCards();
 			}
 		}
-		setLocationQueryString(this.state.queryMap, this.defaultQueryMap);
 
 		if (!this.state.filteredCards || prevState.queryMap !== this.state.queryMap || prevState.cards !== this.state.cards) {
 			this.updateFilteredCards();
@@ -219,7 +200,7 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		filterKeys.forEach((key) => filteredByProp[key] = []);
 		const filteredCards = [];
 
-		(this.state.queryMap.filterSparse === "true" ? this.getSparseFilterDicts() : Promise.resolve([]))
+		(this.props.filterSparse === "true" ? this.getSparseFilterDicts() : Promise.resolve([]))
 			.then((sparseDict) => {
 				this.state.cards.forEach((card) => {
 					filterKeys.forEach((x) => {
@@ -248,12 +229,12 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 				.then((data: any[]) => {
 					const sparseDict = [];
 					sparseDict[0] = {};
-					const playedData = data[0].series.data[this.state.queryMap.playerClass];
+					const playedData = data[0].series.data[this.props.playerClass];
 					playedData.forEach((card) => {
 						sparseDict[0][card.dbf_id] = card.popularity;
 					});
 					sparseDict[1] = {};
-					const includedData = data[1].series.data[this.state.queryMap.playerClass];
+					const includedData = data[1].series.data[this.props.playerClass];
 					includedData.forEach((card) => {
 						sparseDict[1][card.dbf_id] = card.popularity;
 					});
@@ -295,10 +276,8 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		const content = [];
 
 		const onSortChanged = (newSortBy: string, newSortDirection: SortDirection): void => {
-			const queryMap = Object.assign({}, this.state.queryMap);
-			queryMap.sortBy = newSortBy;
-			queryMap.sortDirection = newSortDirection;
-			this.setState({queryMap});
+			this.props.setSortBy(newSortBy);
+			this.props.setSortDirection(newSortDirection);
 		};
 
 		let showMoreButton = null;
@@ -329,8 +308,8 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 								cards={this.state.filteredCards || []}
 								numCards={this.state.numCards}
 								onSortChanged={onSortChanged}
-								sortBy={this.state.queryMap.sortBy}
-								sortDirection={this.state.queryMap.sortDirection as SortDirection}
+								sortBy={this.props.sortBy}
+								sortDirection={this.props.sortDirection as SortDirection}
 							/>
 						</TableLoading>
 					</DataInjector>
@@ -355,10 +334,10 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 								cards={this.state.filteredCards || []}
 								numCards={this.state.numCards}
 								onSortChanged={onSortChanged}
-								sortBy={this.state.queryMap.sortBy}
-								sortDirection={this.state.queryMap.sortDirection as SortDirection}
-								gameType={this.state.queryMap.gameType}
-								playerClass={this.state.queryMap.playerClass}
+								sortBy={this.props.sortBy}
+								sortDirection={this.props.sortDirection as SortDirection}
+								gameType={this.props.gameType}
+								playerClass={this.props.playerClass}
 							/>
 						</TableLoading>
 					</DataInjector>
@@ -398,9 +377,9 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		if (!this.state.showFilters) {
 			filterClassNames.push("hidden-xs");
 			let clear = null;
-			if (this.state.queryMap["text"]) {
+			if (this.props.text) {
 				clear = (
-					<span className="glyphicon glyphicon-remove form-control-feedback" onClick={() => setQueryMap(this, "text", "")} />
+					<span className="glyphicon glyphicon-remove form-control-feedback" onClick={() => this.props.setText("", true)} />
 				);
 			}
 			search = (
@@ -411,8 +390,8 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 							placeholder="Search…"
 							type="search"
 							className="form-control"
-							value={this.state.queryMap["text"]}
-							onChange={(x) => setQueryMap(this, "text", x.target["value"])}
+							value={this.props.text}
+							onChange={(x) => this.props.setText(x.target["value"])}
 						/>
 						<span className="glyphicon glyphicon-search form-control-feedback"/>
 						{clear}
@@ -511,24 +490,12 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		return filters;
 	}
 
-	getDefeaultQueryMap(): QueryMap {
-		const queryMap = Object.assign({}, this.defaultQueryMap);
-		queryMap.sortBy = this.state.queryMap.sortBy;
-		queryMap.sortDirection = this.state.queryMap.sortDirection;
-		queryMap.account = this.state.queryMap.account;
-		return queryMap;
-	}
-
-	resetFilters(): void {
-		this.setState({queryMap: this.getDefeaultQueryMap()});
-	}
-
 	buildFilters(): JSX.Element[] {
-		const showReset = queryMapHasChanges(this.state.queryMap, this.getDefeaultQueryMap());
+		const showReset = this.props.canBeReset;
 		const viewType = this.props.viewType;
 
 		const filters = [
-			<ResetHeader onReset={() => this.resetFilters()} showReset={showReset}>
+			<ResetHeader onReset={() => this.props.reset()} showReset={showReset}>
 				{viewType === "cards" ? "Gallery" : (viewType === "statistics" ? "Cards" : "My Cards")}
 			</ResetHeader>,
 		];
@@ -537,12 +504,12 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 				<section id="mode-filter">
 					<InfoboxFilterGroup
 						header="Game Mode"
-						selectedValue={this.state.queryMap["gameType"]}
-						onClick={(value) => setQueryMap(this, "gameType", value)}
+						selectedValue={this.props.gameType}
+						onClick={(value) => this.props.setGameType(value)}
 					>
 						<InfoboxFilter value="RANKED_STANDARD">Ranked Standard</InfoboxFilter>
 						<InfoboxFilter value="RANKED_WILD">Ranked Wild</InfoboxFilter>
-						<InfoboxFilter disabled={this.state.queryMap["rankRange"] === "LEGEND_THROUGH_TEN"} value="ARENA">
+						<InfoboxFilter disabled={this.props.rankRange === "LEGEND_THROUGH_TEN"} value="ARENA">
 							Arena
 						</InfoboxFilter>
 					</InfoboxFilterGroup>
@@ -557,8 +524,8 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 					hideAll
 					minimal
 					multiSelect={false}
-					selectedClasses={[this.state.queryMap["playerClass"] as FilterOption]}
-					selectionChanged={(selected) => setQueryMap(this, "playerClass", selected[0])}
+					selectedClasses={[this.props.playerClass]}
+					selectionChanged={(selected) => this.props.setPlayerClass(selected[0])}
 				/>,
 			);
 		}
@@ -570,13 +537,13 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 					hideAll
 					minimal
 					multiSelect={false}
-					selectedClasses={[this.state.queryMap["playerClass"] as FilterOption]}
-					selectionChanged={(selected) => setQueryMap(this, "playerClass", selected[0])}
+					selectedClasses={[this.props.playerClass]}
+					selectionChanged={(selected) => this.props.setPlayerClass(selected[0])}
 				/>,
 				<InfoboxFilterGroup
 					deselectable
-					selectedValue={this.state.queryMap["exclude"]}
-					onClick={(value) => setQueryMap(this, "exclude", value)}
+					selectedValue={this.props.exclude}
+					onClick={(value) => this.props.setExclude(value)}
 				>
 					<InfoboxFilter value="neutral">Class cards only</InfoboxFilter>
 					<InfoboxFilter value="class">Neutral cards only</InfoboxFilter>
@@ -590,8 +557,8 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 					<InfoboxFilterGroup
 						header="Time Frame"
 						locked={!this.props.user.isPremium()}
-						selectedValue={this.state.queryMap["timeRange"]}
-						onClick={(value) => setQueryMap(this, "timeRange", value)}
+						selectedValue={this.props.timeRange}
+						onClick={(value) => this.props.setTimeRange(value)}
 					>
 						<InfoboxFilter value="LAST_1_DAY">Yesterday</InfoboxFilter>
 						<InfoboxFilter value="LAST_3_DAYS">Last 3 days</InfoboxFilter>
@@ -607,12 +574,12 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 					<InfoboxFilterGroup
 						header="Rank Range"
 						locked={!this.props.user.isPremium()}
-						selectedValue={this.state.queryMap["rankRange"]} onClick={(value) => setQueryMap(this, "rankRange", value)}
+						selectedValue={this.props.rankRange} onClick={(value) => this.props.setRankRange(value)}
 					>
-						<InfoboxFilter disabled={this.state.queryMap["gameType"] === "ARENA"} value="LEGEND_THROUGH_TEN">
+						<InfoboxFilter disabled={this.props.gameType === "ARENA"} value="LEGEND_THROUGH_TEN">
 							Legend–10
 						</InfoboxFilter>
-						<InfoboxFilter disabled={this.state.queryMap["gameType"] === "ARENA"} value="ALL">Legend–25</InfoboxFilter>
+						<InfoboxFilter disabled={this.props.gameType === "ARENA"} value="ALL">Legend–25</InfoboxFilter>
 					</InfoboxFilterGroup>
 				</PremiumWrapper>,
 			);
@@ -629,26 +596,22 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 			);
 		}
 
-		if (viewType === "personal" && this.props.user.getAccounts().length > 0) {
-			const accounts = [];
-			this.props.user.getAccounts().forEach((acc ) => {
-				accounts.push(
-					<InfoboxFilter value={acc.region + "-" + acc.lo}>
-						{acc.display}
-					</InfoboxFilter>,
-				);
-			});
-			if (accounts.length) {
-				filters.push(
-					<InfoboxFilterGroup
-						header="Accounts"
-						selectedValue={this.state.queryMap.account}
-						onClick={(value) => setQueryMap(this, "account", value)}
-					>
-						{accounts}
-					</InfoboxFilterGroup>,
-				);
-			}
+		let accounts: any[] = this.props.user.getAccounts();
+		if (viewType === "personal" && accounts.length > 0) {
+			accounts = accounts.map((account) => (
+				<InfoboxFilter value={account.region + "-" + account.lo}>
+					{account.display}
+				</InfoboxFilter>
+			));
+			filters.push(
+				<InfoboxFilterGroup
+					header="Accounts"
+					selectedValue={this.props.account}
+					onClick={(value) => this.props.setAccount(value)}
+				>
+					{accounts}
+				</InfoboxFilterGroup>,
+			);
 		}
 
 		if (viewType === "statistics" || viewType === "personal") {
@@ -668,8 +631,8 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 				</ul>,
 				<InfoboxFilterGroup
 					deselectable
-					selectedValue={this.state.queryMap["filterSparse"]}
-					onClick={(value) => setQueryMap(this, "filterSparse", value)}
+					selectedValue={this.props.filterSparse}
+					onClick={(value) => this.props.setFilterSparse(value)}
 				>
 					<InfoboxFilter value="true">Hide sparse data</InfoboxFilter>
 				</InfoboxFilterGroup>,
@@ -786,7 +749,7 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 	}
 
 	buildFormatFilter(count: number) {
-		const selected = this.state.queryMap["format"] === "standard";
+		const selected = this.props.format === "standard";
 		const classNames = ["selectable"];
 		if (!count) {
 			classNames.push("disabled");
@@ -798,7 +761,7 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		return(
 			<li
 				className={classNames.join(" ")}
-				onClick={() => count && setQueryMap(this, "format", selected ? null : "standard")}
+				onClick={() => count && this.props.setFormat(selected ? null : "standard")}
 			>
 				Standard only
 				<span className="infobox-value">{count || 0}</span>
@@ -807,9 +770,8 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 	}
 
 	filter(card: any, excludeFilter?: string, sparseDicts?: any[]): boolean {
-		const queryMap = this.state.queryMap;
-		if (queryMap["text"]) {
-			const text = cleanText(queryMap["text"]);
+		if (this.props.text) {
+			const text = cleanText(this.props.text);
 			const slang = slangToCardId(text);
 			if (!slang || card.id !== slang) {
 				if (cleanText(card.name).indexOf(text) === -1) {
@@ -823,21 +785,21 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		const viewType = this.props.viewType;
 
 		if (viewType === "statistics") {
-			const exclude = this.state.queryMap["exclude"];
+			const exclude = this.props.exclude;
 			if (exclude === "neutral" && card.playerClass === "NEUTRAL") {
 				return true;
 			}
 			else if (exclude === "class" && card.playerClass !== "NEUTRAL") {
 				return true;
 			}
-			const playerClass = this.state.queryMap["playerClass"];
+			const playerClass = this.props.playerClass;
 			if (
 				playerClass !== "ALL" && card.multiClassGroup
 				&& this.multiClassGroups[card.multiClassGroup].indexOf(playerClass) === -1
 			) {
 				return true;
 			}
-			if (this.state.queryMap["gameType"] === "RANKED_STANDARD" && wildSets.indexOf(card.set) !== -1) {
+			if (this.props.gameType === "RANKED_STANDARD" && wildSets.indexOf(card.set) !== -1) {
 				return true;
 			}
 			if (playerClass !== "ALL" && playerClass !== card.playerClass && card.playerClass !== "NEUTRAL") {
@@ -901,10 +863,10 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 
 	getParams(): any {
 		return {
-			GameType: this.state.queryMap.gameType || this.defaultQueryMap.gameType,
-			RankRange: this.state.queryMap.rankRange || this.defaultQueryMap.rankRange,
-			TimeRange: this.state.queryMap.timeRange || this.defaultQueryMap.timeRange,
-			// Region: this.state.queryMap["region"],
+			GameType: this.props.gameType,
+			RankRange: this.props.rankRange,
+			TimeRange: this.props.timeRange,
+			// Region: this.props.region,
 		};
 	}
 
@@ -912,9 +874,9 @@ export default class CardDiscover extends React.Component<CardDiscoverProps, Car
 		const getRegion = (acc: string) => acc && acc.split("-")[0];
 		const getLo = (acc: string) => acc && acc.split("-")[1];
 		return {
-			GameType: this.state.queryMap.gameType || this.defaultQueryMap.gameType,
-			Region: getRegion(this.state.queryMap.account) || getRegion(this.defaultQueryMap.account),
-			account_lo: getLo(this.state.queryMap.account) || getLo(this.defaultQueryMap.account),
+			GameType: this.props.gameType,
+			Region: getRegion(this.props.account),
+			account_lo: getLo(this.props.account),
 		};
 	}
 }
